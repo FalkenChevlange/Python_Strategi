@@ -1,0 +1,19 @@
+{
+    "factors": [
+        {
+            "name": "size_rank",
+            "holding_periods": ["quarterly", "yearly", "2_years", "3_years", "5_years"]
+        },
+        {
+            "name": "value_rank",
+            "holding_periods": ["quarterly", "yearly", "2_years", "3_years", "5_years"]
+        },
+        {
+            "name": "profitability_rank",
+            "holding_periods": ["quarterly", "yearly", "2_years", "3_years", "5_years"]
+        }
+    ],
+    "output_dir": "output",
+    "backup_dir": "backups",
+    "export_figures": true
+}
