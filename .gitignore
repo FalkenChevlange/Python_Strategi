@@ -1,5 +1,6 @@
 # Ignore virtual environment directories
 venv/
+myenv/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -84,3 +85,7 @@ output/
 # Ignore SQLite database files
 *.db
 *.sqlite3
+
+# Custom additions
+Exportdata/
+OLD/
