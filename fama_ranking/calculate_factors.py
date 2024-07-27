@@ -15,7 +15,11 @@ def calculate_factors(price_df, report_df):
     report_df['date'] = report_df['report_start_date']
     df = pd.merge(price_df, report_df, on=['ins_id', 'date'], how='left')
     df['market_cap'] = df['close'] * df['number_of_shares']
-    df['value'] = df['rolling_earnings_per_share'] / df['close']
+    
+    # Updated value factor calculation
+    df['operating_earnings_per_share'] = df['rolling_operating_income'] / df['number_of_shares']
+    df['value_factor'] = df['operating_earnings_per_share'] / df['close']
+    
     df['profitability'] = df['rolling_operating_income'] / df['rolling_gross_income']
     df['momentum'] = df.groupby('ins_id')['close'].pct_change(periods=12)
     df['volatility'] = df.groupby('ins_id')['close'].rolling(window=12).std().reset_index(level=0, drop=True)

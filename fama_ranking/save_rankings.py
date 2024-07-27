@@ -1,9 +1,11 @@
-import pandas as pd
-from helpers.db_utils import connect_db
+import sqlite3
 
 def save_rankings_to_db(df):
-    conn = connect_db()
-    ranking_df = df[['ins_id', 'date', 'size_rank', 'value_rank', 'profitability_rank', 'momentum_rank', 'volatility_rank']]
-    ranking_df.to_sql('factor_rankings', conn, if_exists='replace', index=False)
+    conn = sqlite3.connect('path_to_your_database.db')
+    df.to_sql('rankings', conn, if_exists='replace', index=False)
     conn.close()
-    print("Factor rankings saved to database.")
+
+def save_rankings(df):
+    # Justera för att inkludera 'value_factor_rank' istället för 'value_rank'
+    ranking_df = df[['ins_id', 'date', 'size_rank', 'value_factor_rank', 'profitability_rank', 'momentum_rank', 'volatility_rank']]
+    save_rankings_to_db(ranking_df)
