@@ -47,7 +47,7 @@ def main():
 
     writer = pd.ExcelWriter(output_file, engine='openpyxl')
 
-    for factor in ['size_rank', 'value_rank', 'momentum_rank', 'profitability_rank', 'volatility_rank']:
+    for factor in ['size_rank', 'value_factor_rank', 'momentum_rank', 'profitability_rank', 'volatility_rank']:
         for period in ['quarterly', 'yearly', '2_years', '3_years', '5_years']:
             print(f"Processing factor {factor} for holding period {period}")
             try:
