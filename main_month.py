@@ -55,6 +55,7 @@ def save_report_data_to_db(df, ins_id):
 
 # Function to fetch and save monthly price data
 def fetch_and_save_monthly_price_data(ins_id, start_date=None, end_date=None):
+    print(f"Fetching monthly price data for ins_id {ins_id} from {start_date} to {end_date}.")
     df = api.get_instrument_stock_prices(ins_id, from_date=start_date, to_date=end_date)
     df.reset_index(inplace=True)
     df['date'] = pd.to_datetime(df['date'])
@@ -70,9 +71,11 @@ def fetch_and_save_monthly_price_data(ins_id, start_date=None, end_date=None):
     
     monthly_df['date'] = monthly_df['date'].dt.strftime('%Y-%m-%d')
     save_price_data_to_db(monthly_df, ins_id)
+    print(f"Monthly price data for ins_id {ins_id} fetched and saved.")
 
 # Function to fetch and save report data
 def fetch_and_save_report_data(ins_id):
+    print(f"Fetching report data for ins_id {ins_id}.")
     quarters, years = api.get_instrument_reports(ins_id)[:2]  # Only fetch quarters and years
     for df in [quarters, years]:
         df.reset_index(inplace=True)  # Ensure the index is reset
@@ -82,15 +85,19 @@ def fetch_and_save_report_data(ins_id):
         print(df.head())  # Debug: Print the DataFrame
         print(df.columns)  # Debug: Print the DataFrame columns
         save_report_data_to_db(df, ins_id)
+    print(f"Report data for ins_id {ins_id} fetched and saved.")
 
 # Function to fetch instrument list
 def fetch_instrument_list():
+    print("Fetching instrument list.")
     df = api.get_instruments()
+    print("Instrument list fetched.")
     return df.index.tolist()  # Assuming the instrument IDs are in the index
 
 # Example usage
 if __name__ == "__main__":
-    instrument_ids = fetch_instrument_list()[:40]  # Fetch data for the first 5 instruments by default
+    print("Starting data fetch process.")
+    instrument_ids = fetch_instrument_list()[:40]  # Fetch data for the first 40 instruments by default
     for ins_id in instrument_ids:
         fetch_and_save_monthly_price_data(ins_id, start_date="2000-01-01", end_date="2024-07-01")
         fetch_and_save_report_data(ins_id)

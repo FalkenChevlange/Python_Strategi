@@ -1,15 +1,31 @@
 import sqlite3
-from helpers.db_utils import connect_db
+from borsdata_api.constants import DB_FILE_MONTHLY
 
 def save_rankings_to_db(df):
-    conn = connect_db()
-    print("Saving to SQL...")
+    """
+    Sparar rankad data till en SQLite-databas.
+    
+    Parametrar:
+    df (DataFrame): DataFrame innehållande rankad data.
+    """
+    print("Sparar rankningar i databasen...")
+    
+    conn = sqlite3.connect(DB_FILE_MONTHLY)
     df.to_sql('factor_rankings', conn, if_exists='replace', index=False)
-    print("Data saved to SQL.")
     conn.close()
+    
+    print("Rankningar sparade i databasen.")
 
 def save_rankings(df):
-    # Justera för att inkludera 'value_factor_rank' istället för 'value_rank'
+    """
+    Förbereder data för lagring genom att inkludera relevanta rankningskolumner.
+    
+    Parametrar:
+    df (DataFrame): DataFrame innehållande rankad data.
+    """
+    print("Förbereder rankningar för databasen...")
+    
     ranking_df = df[['ins_id', 'date', 'size_rank', 'value_factor_rank', 'profitability_rank', 'momentum_rank', 'volatility_rank']]
-    print("Saving adjusted rankings...")
     save_rankings_to_db(ranking_df)
+    
+    print("Rankningar förberedda och sparade.")

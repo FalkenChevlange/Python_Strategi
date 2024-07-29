@@ -32,7 +32,8 @@ def create_tables():
             PRIMARY KEY (ins_id, date)
         )
     ''')
-    
+    print("Table 'monthly_price_data' created or already exists.")
+
     # Create table for monthly report data
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS monthly_report_data (
@@ -77,6 +78,7 @@ def create_tables():
             PRIMARY KEY (ins_id, report_start_date, report_end_date)
         )
     ''')
+    print("Table 'monthly_report_data' created or already exists.")
 
     conn.commit()
     conn.close()
@@ -85,3 +87,4 @@ def create_tables():
 if __name__ == "__main__":
     backup_and_remove_existing_db(DB_FILE_MONTHLY)
     create_tables()
+    print("Database setup complete.")
