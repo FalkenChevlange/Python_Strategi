@@ -97,7 +97,7 @@ def fetch_instrument_list():
 # Example usage
 if __name__ == "__main__":
     print("Starting data fetch process.")
-    instrument_ids = fetch_instrument_list()[:40]  # Fetch data for the first 40 instruments by default
+    instrument_ids = fetch_instrument_list()[:400]  # Fetch data for the first 40 instruments by default
     for ins_id in instrument_ids:
         fetch_and_save_monthly_price_data(ins_id, start_date="2000-01-01", end_date="2024-07-01")
         fetch_and_save_report_data(ins_id)
