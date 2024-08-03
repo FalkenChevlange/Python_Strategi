@@ -23,13 +23,13 @@ def custom_rank(series):
 
 def rank_factors(df):
     """
-    Rankar olika finansiella faktorer i en DataFrame.
+    Rankar olika finansiella faktorer i en DataFrame och bevarar de ursprungliga värdena.
     
     Parametrar:
     df (DataFrame): DataFrame innehållande finansiella faktorer.
     
     Returnerar:
-    DataFrame: DataFrame med rankade faktorer.
+    DataFrame: DataFrame med rankade faktorer och ursprungliga värden.
     """
     print("Rankar faktorer...")
     
@@ -38,6 +38,12 @@ def rank_factors(df):
     df['profitability_rank'] = df.groupby('date')['profitability'].rank(pct=True)
     df['momentum_rank'] = df.groupby('date')['momentum'].rank(pct=True)
     df['volatility_rank'] = df.groupby('date')['volatility'].rank(pct=True, ascending=False)
+    
+    df['market_cap_value'] = df['market_cap']
+    df['value_factor_value'] = df['value_factor']
+    df['profitability_value'] = df['profitability']
+    df['momentum_value'] = df['momentum']
+    df['volatility_value'] = df['volatility']
     
     print("Faktorer rankade.")
     return df
