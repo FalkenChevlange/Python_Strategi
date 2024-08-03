@@ -6,6 +6,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 from sqlalchemy import create_engine
+import numpy as np
 
 # Anslut till SQLite-databasen
 db_path = r'C:\Users\ander\Documents\Borsdata\Python_Strategi\Exportdata\borsdata_monthly.db'
@@ -39,6 +40,15 @@ df = df[df['date'] >= pd.Timestamp(f"{start_year + 5}-01-01")]
 # Skapa en kolumn som representerar "dagar sedan inköpsdag"
 df['days_since_purchase'] = df.groupby('ins_id')['date'].transform(lambda x: (x - x.min()).dt.days)
 
+# Funktion för att ta bort outliers
+def remove_outliers(data, column, threshold=1.5):
+    q1 = data[column].quantile(0.25)
+    q3 = data[column].quantile(0.75)
+    iqr = q3 - q1
+    lower_bound = q1 - threshold * iqr
+    upper_bound = q3 + threshold * iqr
+    return data[(data[column] >= lower_bound) & (data[column] <= upper_bound)]
+
 # Skapa en Dash-applikation
 app = dash.Dash(__name__)
 
@@ -54,6 +64,14 @@ app.layout = html.Div([
             {'label': 'Size', 'value': 'size_rank'}
         ],
         value='momentum_rank'
+    ),
+    dcc.Dropdown(
+        id='scatterplot-type-dropdown',
+        options=[
+            {'label': 'Rank', 'value': 'rank'},
+            {'label': 'Value', 'value': 'value'}
+        ],
+        value='rank'
     ),
     dcc.Tabs([
         dcc.Tab(label='Boxplot', children=[
@@ -81,6 +99,15 @@ app.layout = html.Div([
                 ],
                 value='all'
             ),
+            html.Label("Exkludera extrema värden:"),
+            dcc.RadioItems(
+                id='exclude-extremes',
+                options=[
+                    {'label': 'Ja', 'value': 'yes'},
+                    {'label': 'Nej', 'value': 'no'}
+                ],
+                value='no'
+            ),
             html.Div(id='boxplot-nyckeltal')
         ]),
         dcc.Tab(label='Violinchart', children=[
@@ -99,6 +126,15 @@ app.layout = html.Div([
                 ],
                 value='return_1y'
             ),
+            html.Label("Exkludera extrema värden:"),
+            dcc.RadioItems(
+                id='exclude-extremes-violin',
+                options=[
+                    {'label': 'Ja', 'value': 'yes'},
+                    {'label': 'Nej', 'value': 'no'}
+                ],
+                value='no'
+            ),
             html.Div(id='violin-nyckeltal')
         ]),
         dcc.Tab(label='Scatterplot', children=[
@@ -116,6 +152,15 @@ app.layout = html.Div([
                     {'label': '5 år', 'value': 'return_5y'}
                 ],
                 value='return_1y'
+            ),
+            html.Label("Exkludera extrema värden:"),
+            dcc.RadioItems(
+                id='exclude-extremes-scatter',
+                options=[
+                    {'label': 'Ja', 'value': 'yes'},
+                    {'label': 'Nej', 'value': 'no'}
+                ],
+                value='no'
             ),
             html.Div(id='scatterplot-nyckeltal')
         ]),
@@ -147,10 +192,13 @@ app.layout = html.Div([
      Output('boxplot-nyckeltal', 'children')],
     [Input('boxplot-horizon', 'value'),
      Input('boxplot-outliers', 'value'),
-     Input('factor-dropdown', 'value')]
+     Input('factor-dropdown', 'value'),
+     Input('exclude-extremes', 'value')]
 )
-def update_boxplot(horizon, outliers, factor):
+def update_boxplot(horizon, outliers, factor, exclude_extremes):
     filtered_data = df.copy()
+    if exclude_extremes == 'yes':
+        filtered_data = remove_outliers(filtered_data, horizon)
     filtered_data['quartile'] = pd.qcut(filtered_data[factor], 4, labels=False) + 1
     fig = px.box(filtered_data, x='quartile', y=horizon, points=outliers)
     fig.update_layout(yaxis_title='Procentuell Förändring (%)')
@@ -175,10 +223,13 @@ def update_boxplot(horizon, outliers, factor):
     [Output('violin-graph', 'figure'),
      Output('violin-nyckeltal', 'children')],
     [Input('violin-horizon', 'value'),
-     Input('factor-dropdown', 'value')]
+     Input('factor-dropdown', 'value'),
+     Input('exclude-extremes-violin', 'value')]
 )
-def update_violin(horizon, factor):
+def update_violin(horizon, factor, exclude_extremes):
     filtered_data = df.copy()
+    if exclude_extremes == 'yes':
+        filtered_data = remove_outliers(filtered_data, horizon)
     filtered_data['quartile'] = pd.qcut(filtered_data[factor], 4, labels=False) + 1
     
     fig = go.Figure()
@@ -218,12 +269,22 @@ def update_violin(horizon, factor):
     [Output('scatterplot-graph', 'figure'),
      Output('scatterplot-nyckeltal', 'children')],
     [Input('scatterplot-horizon', 'value'),
-     Input('factor-dropdown', 'value')]
+     Input('factor-dropdown', 'value'),
+     Input('scatterplot-type-dropdown', 'value'),
+     Input('exclude-extremes-scatter', 'value')]
 )
-def update_scatterplot(horizon, factor):
+def update_scatterplot(horizon, factor, scatter_type, exclude_extremes):
     filtered_data = df.copy()
+    if exclude_extremes == 'yes':
+        filtered_data = remove_outliers(filtered_data, horizon)
     filtered_data['quartile'] = pd.qcut(filtered_data[factor], 4, labels=False) + 1
-    fig = px.scatter(filtered_data, x=factor, y=horizon, color='quartile', trendline='ols')
+    
+    if scatter_type == 'rank':
+        fig = px.scatter(filtered_data, x=factor, y=horizon, color='quartile', trendline='ols')
+    else:
+        factor_value_col = factor.replace('rank', 'value')  # Assuming the value columns are named similarly
+        fig = px.scatter(filtered_data, x=factor_value_col, y=horizon, color='quartile', trendline='ols')
+    
     fig.update_layout(yaxis_title='Procentuell Förändring (%)')
     
     # Beräkna nyckeltal
@@ -258,8 +319,9 @@ def update_line(horizon, factor):
     
     # Beräkna medianutveckling för varje dag sedan inköpsdag
     numeric_columns = filtered_data.select_dtypes(include=['number']).columns
-    median_data = filtered_data.groupby(['days_since_purchase', 'quartile'])[numeric_columns].median().reset_index()
-    
+    grouped_data = filtered_data.groupby(['days_since_purchase', 'quartile'])[numeric_columns].median()
+    grouped_data = grouped_data.reset_index(drop=False)  # Återställ index utan att duplicera 'quartile'
+
     # Filtrera baserat på vald horisont
     horizon_mapping = {
         '3m': 90,
@@ -271,9 +333,9 @@ def update_line(horizon, factor):
         '5y': 5 * 365
     }
     horizon_days = horizon_mapping[horizon]
-    median_data = median_data[median_data['days_since_purchase'] <= horizon_days]
+    grouped_data = grouped_data[grouped_data['days_since_purchase'] <= horizon_days]
     
-    fig = px.line(median_data, x='days_since_purchase', y='close', color='quartile')
+    fig = px.line(grouped_data, x='days_since_purchase', y='close', color='quartile')
     fig.update_layout(yaxis_title='Procentuell Förändring (%)', xaxis_title='Dagar sedan inköpsdag')
     
     # Beräkna nyckeltal
@@ -291,6 +353,7 @@ def update_line(horizon, factor):
         ]))
     
     return fig, nyckeltal
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
